@@ -5,7 +5,7 @@
 | Team Member   | uID      |
 | ------------- | -------- |
 | Omar Rizwan   | u1529771 |
-| Ahmed Ali | u |
+| Ahmed Ali | U0957843 |
 | Team Member 3 | u1670628|
 
 ## Project Overview
