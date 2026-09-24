@@ -166,15 +166,15 @@ Tasks are listed in their planned implementation order.
 | ----: | ----------------------------------------------------- | ----------- | ----------------------------- |
 |     1 | Review client requirements and finalize Phase 1 scope | All Members | Agreed Phase 1 requirements   |
 |     2 | Create initial UI wireframes                          | Omar        | UI design and navigation flow |
-|     3 | Create main application layout                        | Member 2    | Main drawing screen           |
+|     3 | Create main application layout                        | Ahmed   | Main drawing screen           |
 |     4 | Implement drawing canvas/view                         | Member 3    | Functional canvas             |
 |     5 | Create drawing model and state representation         | Omar        | Drawing data model            |
 |     6 | Implement user input and drawing behavior             | Member 3    | Canvas interaction            |
-|     7 | Implement tool controls                               | Member 2    | Functional tool selection     |
+|     7 | Implement tool controls                               | Ahmed | Functional tool selection     |
 |     8 | Implement drawing actions and state management        | Omar        | Drawing operations            |
 |     9 | Write model and state unit tests                      | Omar        | Unit test suite               |
 |    10 | Write drawing/tool behavior tests                     | Member 3    | Drawing tests                 |
-|    11 | Perform UI and integration testing                    | Member 2    | Verified UI behavior          |
+|    11 | Perform UI and integration testing                    | Ahmed   | Verified UI behavior          |
 |    12 | Integrate all Phase 1 components                      | All Members | Complete prototype            |
 |    13 | Fix bugs and polish the prototype                     | All Members | Stable Phase 1 build          |
 |    14 | Review Phase 1 requirements and documentation         | All Members | Final Phase 1 submission      |
