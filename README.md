@@ -6,7 +6,7 @@
 | ------------- | -------- |
 | Omar Rizwan   | u1529771 |
 | Ahmed Ali | U0957843 |
-| Team Member 3 | u1670628|
+| herman Sjaastad | u1670628|
 
 ## Project Overview
 
