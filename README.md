@@ -2,11 +2,11 @@
 
 ## Team Members
 
-| Team Member   | uID      |
-| ------------- | -------- |
-| Omar Rizwan   | u1529771 |
-| Ahmed Ali | U0957843 |
-| herman Sjaastad | u1670628|
+| Team Member     | uID      |
+|-----------------| -------- |
+| Omar Rizwan     | u1529771 |
+| Ahmed Ali       | U0957843 |
+| Herman Sjaastad | u1670628|
 
 ## Project Overview
 
@@ -163,18 +163,18 @@ UI-specific behavior will also be manually tested on the target device/emulator.
 Tasks are listed in their planned implementation order.
 
 | Order | Task                                                  | Assigned To | Deliverable                   |
-| ----: | ----------------------------------------------------- | ----------- | ----------------------------- |
+| ----: | ----------------------------------------------------- |-------------| ----------------------------- |
 |     1 | Review client requirements and finalize Phase 1 scope | All Members | Agreed Phase 1 requirements   |
 |     2 | Create initial UI wireframes                          | Omar        | UI design and navigation flow |
-|     3 | Create main application layout                        | Ahmed   | Main drawing screen           |
-|     4 | Implement drawing canvas/view                         | Member 3    | Functional canvas             |
+|     3 | Create main application layout                        | Ahmed       | Main drawing screen           |
+|     4 | Implement drawing canvas/view                         | Herman      | Functional canvas             |
 |     5 | Create drawing model and state representation         | Omar        | Drawing data model            |
-|     6 | Implement user input and drawing behavior             | Member 3    | Canvas interaction            |
-|     7 | Implement tool controls                               | Ahmed | Functional tool selection     |
+|     6 | Implement user input and drawing behavior             | Herman      | Canvas interaction            |
+|     7 | Implement tool controls                               | Ahmed       | Functional tool selection     |
 |     8 | Implement drawing actions and state management        | Omar        | Drawing operations            |
 |     9 | Write model and state unit tests                      | Omar        | Unit test suite               |
-|    10 | Write drawing/tool behavior tests                     | Member 3    | Drawing tests                 |
-|    11 | Perform UI and integration testing                    | Ahmed   | Verified UI behavior          |
+|    10 | Write drawing/tool behavior tests                     | Herman      | Drawing tests                 |
+|    11 | Perform UI and integration testing                    | Ahmed       | Verified UI behavior          |
 |    12 | Integrate all Phase 1 components                      | All Members | Complete prototype            |
 |    13 | Fix bugs and polish the prototype                     | All Members | Stable Phase 1 build          |
 |    14 | Review Phase 1 requirements and documentation         | All Members | Final Phase 1 submission      |
