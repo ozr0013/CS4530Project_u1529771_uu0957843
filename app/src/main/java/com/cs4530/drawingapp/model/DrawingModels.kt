@@ -4,7 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import kotlin.math.ceil
 
-enum class PenShape { LINE, CIRCLE, SQUARE }
+enum class PenShape { LINE, SQUARE }
 
 data class PenSettings(
     val color: Color = Color.Black,
@@ -32,7 +32,7 @@ data class DrawingUiState(
     val canRedo: Boolean get() = redoStack.isNotEmpty()
 }
 
-/** Fills gaps between touch points so circle/square stamps form a continuous line. */
+/** Fills gaps between touch points so square stamps form a continuous line. */
 fun stampPoints(points: List<Offset>, spacing: Float): List<Offset> {
     if (points.size < 2) return points
     val result = mutableListOf(points.first())

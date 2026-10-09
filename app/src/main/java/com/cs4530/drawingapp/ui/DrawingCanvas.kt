@@ -70,9 +70,6 @@ private fun DrawScope.drawPenStroke(stroke: PenStroke) {
     val pen = stroke.pen
     when (pen.shape) {
         PenShape.LINE -> drawLineStroke(stroke.points, pen)
-        PenShape.CIRCLE -> stampPoints(stroke.points, spacing = pen.size / 4f).forEach {
-            drawCircle(color = pen.color, radius = pen.size / 2f, center = it)
-        }
         PenShape.SQUARE -> stampPoints(stroke.points, spacing = pen.size / 4f).forEach {
             drawRect(
                 color = pen.color,
@@ -108,13 +105,9 @@ private fun DrawingCanvasPreview() {
         points = listOf(Offset(40f, 80f), Offset(300f, 160f), Offset(500f, 120f)),
         pen = PenSettings(color = Color.Blue, size = 16f, shape = PenShape.LINE)
     )
-    val circles = PenStroke(
-        points = listOf(Offset(40f, 300f), Offset(500f, 360f)),
-        pen = PenSettings(color = Color.Red, size = 30f, shape = PenShape.CIRCLE)
-    )
     val squares = PenStroke(
-        points = listOf(Offset(40f, 520f), Offset(500f, 480f)),
+        points = listOf(Offset(40f, 400f), Offset(500f, 360f)),
         pen = PenSettings(color = Color.Green, size = 30f, shape = PenShape.SQUARE)
     )
-    DrawingCanvas(DrawingUiState(strokes = listOf(line, circles, squares)))
+    DrawingCanvas(DrawingUiState(strokes = listOf(line, squares)))
 }
