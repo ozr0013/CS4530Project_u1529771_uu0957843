@@ -245,11 +245,11 @@ The team will periodically review progress and adjust the plan if implementation
 By the end of Phase 1, we expect to have:
 
 * [ ] Main application layout
-* [ ] Functional drawing canvas
-* [ ] Core drawing interactions
+* [x] Functional drawing canvas
+* [x] Core drawing interactions
 * [ ] Required tool controls
-* [ ] Application state/model
-* [ ] Unit tests for core functionality
+* [x] Application state/model
+* [x] Unit tests for core functionality
 * [ ] Integrated Phase 1 prototype
 * [ ] Updated project documentation
 
