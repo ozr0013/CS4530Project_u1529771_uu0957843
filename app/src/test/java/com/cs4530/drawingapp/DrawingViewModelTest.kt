@@ -125,4 +125,39 @@ class DrawingViewModelTest {
         assertEquals(6, result.size)
         assertEquals(Offset(10f, 0f), result.last())
     }
+
+    @Test
+    fun redoOnEmptyStackDoesNothing() {
+        vm.redo()
+        assertTrue(vm.state.value.strokes.isEmpty())
+        assertFalse(vm.state.value.canRedo)
+    }
+
+    @Test
+    fun addPointWithoutCurrentStrokeIsIgnored() {
+        vm.addPoint(Offset(10f, 10f))
+        assertNull(vm.state.value.currentStroke)
+        assertTrue(vm.state.value.strokes.isEmpty())
+    }
+
+    @Test
+    fun endStrokeWithoutCurrentStrokeIsIgnored() {
+        vm.endStroke()
+        assertNull(vm.state.value.currentStroke)
+        assertTrue(vm.state.value.strokes.isEmpty())
+    }
+
+    @Test
+    fun stampPointsWithEmptyListReturnsEmptyList() {
+        val result = stampPoints(emptyList(), spacing = 2f)
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun stampPointsWithSinglePointReturnsSamePoint() {
+        val single = listOf(Offset(5f, 5f))
+        val result = stampPoints(single, spacing = 2f)
+        assertEquals(1, result.size)
+        assertEquals(Offset(5f, 5f), result.first())
+    }
 }
