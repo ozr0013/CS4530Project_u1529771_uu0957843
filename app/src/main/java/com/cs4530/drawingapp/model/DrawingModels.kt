@@ -1,5 +1,6 @@
 package com.cs4530.drawingapp.model
 
+import android.graphics.Bitmap
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import kotlin.math.ceil
@@ -26,7 +27,8 @@ data class DrawingUiState(
     val strokes: List<PenStroke> = emptyList(),
     val currentStroke: PenStroke? = null,
     val pen: PenSettings = PenSettings(),
-    val redoStack: List<PenStroke> = emptyList()
+    val redoStack: List<PenStroke> = emptyList(),
+    val backgroundImage: Bitmap? = null
 ) {
     val canUndo: Boolean get() = strokes.isNotEmpty()
     val canRedo: Boolean get() = redoStack.isNotEmpty()

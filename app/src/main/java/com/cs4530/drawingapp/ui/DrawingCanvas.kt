@@ -17,9 +17,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntSize
 import com.cs4530.drawingapp.model.DrawingUiState
 import com.cs4530.drawingapp.model.PenSettings
 import com.cs4530.drawingapp.model.PenShape
@@ -61,6 +63,12 @@ fun DrawingCanvas(
                 }
             }
     ) {
+        state.backgroundImage?.let { bg ->
+            drawImage(
+                image = bg.asImageBitmap(),
+                dstSize = IntSize(size.width.toInt(), size.height.toInt())
+            )
+        }
         state.strokes.forEach { drawPenStroke(it) }
         state.currentStroke?.let { drawPenStroke(it) }
     }
