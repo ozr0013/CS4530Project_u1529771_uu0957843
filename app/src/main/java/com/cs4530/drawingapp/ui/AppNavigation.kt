@@ -85,6 +85,12 @@ fun AppNavigation(viewModel: DrawingViewModel) {
                 onImportImage = { uri ->
                     viewModel.importImageFromUri(context, uri)
                 },
+                onAnalyze = {
+                    viewModel.analyzeCurrentDrawing()
+                },
+                onDismissAnalysis = {
+                    viewModel.dismissAnalysis()
+                },
                 onBack = {
                     navController.popBackStack()
                 }

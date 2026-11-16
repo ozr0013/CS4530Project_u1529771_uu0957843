@@ -2,14 +2,20 @@ package com.cs4530.drawingapp.data.repository
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.util.Base64
 import com.cs4530.drawingapp.data.local.DrawingDao
 import com.cs4530.drawingapp.data.local.DrawingDatabase
 import com.cs4530.drawingapp.data.local.DrawingEntity
 import com.cs4530.drawingapp.data.local.StrokeConverter
+import com.cs4530.drawingapp.data.remote.VisionApiService
+import com.cs4530.drawingapp.data.remote.dto.AnnotateRequest
+import com.cs4530.drawingapp.data.remote.toAnalysisResult
+import com.cs4530.drawingapp.model.AnalysisResult
 import com.cs4530.drawingapp.model.PenStroke
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 
@@ -77,6 +83,21 @@ class DrawingRepository private constructor(
 
     fun getDrawingFile(fileName: String): File {
         return File(appContext.filesDir, fileName)
+    }
+
+    private val visionApiService: VisionApiService by lazy {
+        VisionApiService.create()
+    }
+
+    suspend fun analyzeImage(bitmap: Bitmap, apiKey: String): AnalysisResult = withContext(Dispatchers.IO) {
+        val outputStream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
+        val imageBytes = outputStream.toByteArray()
+        val base64String = Base64.encodeToString(imageBytes, Base64.NO_WRAP)
+
+        val request = AnnotateRequest.forImage(base64String)
+        val response = visionApiService.annotateImage(apiKey, request)
+        response.toAnalysisResult()
     }
 
     companion object {

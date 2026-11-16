@@ -5,12 +5,17 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.Rect
 import android.net.Uri
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.cs4530.drawingapp.BuildConfig
 import com.cs4530.drawingapp.data.local.DrawingEntity
 import com.cs4530.drawingapp.data.local.StrokeConverter
 import com.cs4530.drawingapp.data.repository.DrawingRepository
@@ -195,5 +200,68 @@ class DrawingViewModel(application: Application = Application()) : AndroidViewMo
             chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(chooser)
         }
+    }
+
+    fun dismissAnalysis() {
+        _state.update { it.copy(analysisResult = null, analysisError = null) }
+    }
+
+    fun analyzeCurrentDrawing(apiKey: String = com.cs4530.drawingapp.BuildConfig.VISION_API_KEY) {
+        val currentState = _state.value
+        val bitmapToAnalyze = currentState.backgroundImage ?: generateDrawingBitmap()
+
+        _state.update { it.copy(isAnalyzing = true, analysisError = null, analysisResult = null) }
+
+        viewModelScope.launch {
+            try {
+                val key = apiKey.ifBlank { "AIzaSyDummyKeyForTestingOrFallback" }
+                val result = repository.analyzeImage(bitmapToAnalyze, key)
+                _state.update { it.copy(isAnalyzing = false, analysisResult = result) }
+            } catch (e: Exception) {
+                _state.update { it.copy(isAnalyzing = false, analysisError = e.localizedMessage ?: "Failed to analyze image") }
+            }
+        }
+    }
+
+    private fun generateDrawingBitmap(width: Int = 1024, height: Int = 1024): Bitmap {
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        canvas.drawColor(android.graphics.Color.WHITE)
+
+        val currentState = _state.value
+        currentState.backgroundImage?.let { bg ->
+            canvas.drawBitmap(bg, null, Rect(0, 0, width, height), null)
+        }
+
+        val paint = Paint().apply {
+            isAntiAlias = true
+            strokeCap = Paint.Cap.ROUND
+            strokeJoin = Paint.Join.ROUND
+            style = Paint.Style.STROKE
+        }
+
+        currentState.strokes.forEach { stroke ->
+            val color = stroke.pen.color
+            paint.color = android.graphics.Color.argb(
+                (color.alpha * 255).toInt(),
+                (color.red * 255).toInt(),
+                (color.green * 255).toInt(),
+                (color.blue * 255).toInt()
+            )
+            paint.strokeWidth = stroke.pen.size
+            if (stroke.points.size == 1) {
+                canvas.drawCircle(stroke.points[0].x, stroke.points[0].y, stroke.pen.size / 2f, paint.apply { style = Paint.Style.FILL })
+                paint.style = Paint.Style.STROKE
+            } else if (stroke.points.size > 1) {
+                val path = Path().apply {
+                    moveTo(stroke.points[0].x, stroke.points[0].y)
+                    for (i in 1 until stroke.points.size) {
+                        lineTo(stroke.points[i].x, stroke.points[i].y)
+                    }
+                }
+                canvas.drawPath(path, paint)
+            }
+        }
+        return bitmap
     }
 }

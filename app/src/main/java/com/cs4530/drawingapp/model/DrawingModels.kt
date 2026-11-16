@@ -28,7 +28,10 @@ data class DrawingUiState(
     val currentStroke: PenStroke? = null,
     val pen: PenSettings = PenSettings(),
     val redoStack: List<PenStroke> = emptyList(),
-    val backgroundImage: Bitmap? = null
+    val backgroundImage: Bitmap? = null,
+    val isAnalyzing: Boolean = false,
+    val analysisResult: AnalysisResult? = null,
+    val analysisError: String? = null
 ) {
     val canUndo: Boolean get() = strokes.isNotEmpty()
     val canRedo: Boolean get() = redoStack.isNotEmpty()
