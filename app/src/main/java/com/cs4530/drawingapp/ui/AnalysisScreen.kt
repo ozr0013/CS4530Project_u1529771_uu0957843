@@ -42,7 +42,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.font.FontWeight
@@ -186,16 +185,14 @@ private fun AnalyzedImage(state: DrawingUiState, highlighted: Int?) {
     ) {
         Canvas(Modifier.fillMaxSize()) {
             // Fit the image inside the canvas and map boxes onto the area it actually covers.
-            val scale = minOf(size.width / image.width, size.height / image.height)
-            val drawn = Size(image.width * scale, image.height * scale)
-            val origin = Offset((size.width - drawn.width) / 2f, (size.height - drawn.height) / 2f)
+            val area = fitInside(Size(image.width.toFloat(), image.height.toFloat()), size)
             drawImage(
                 image = bitmap,
-                dstOffset = IntOffset(origin.x.toInt(), origin.y.toInt()),
-                dstSize = IntSize(drawn.width.toInt(), drawn.height.toInt())
+                dstOffset = IntOffset(area.left.toInt(), area.top.toInt()),
+                dstSize = IntSize(area.width.toInt(), area.height.toInt())
             )
             state.analysisResult?.let {
-                drawDetections(it.objects, origin, drawn, highlighted)
+                drawDetections(it.objects, area, highlighted)
             }
         }
     }
