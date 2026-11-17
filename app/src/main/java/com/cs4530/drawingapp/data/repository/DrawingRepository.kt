@@ -3,13 +3,12 @@ package com.cs4530.drawingapp.data.repository
 import android.content.Context
 import android.graphics.Bitmap
 import android.util.Base64
+import com.cs4530.drawingapp.BuildConfig
 import com.cs4530.drawingapp.data.local.DrawingDao
 import com.cs4530.drawingapp.data.local.DrawingDatabase
 import com.cs4530.drawingapp.data.local.DrawingEntity
 import com.cs4530.drawingapp.data.local.StrokeConverter
 import com.cs4530.drawingapp.data.remote.VisionApiService
-import com.cs4530.drawingapp.data.remote.dto.AnnotateRequest
-import com.cs4530.drawingapp.data.remote.toAnalysisResult
 import com.cs4530.drawingapp.model.AnalysisResult
 import com.cs4530.drawingapp.model.PenStroke
 import kotlinx.coroutines.Dispatchers
@@ -85,22 +84,35 @@ class DrawingRepository private constructor(
         return File(appContext.filesDir, fileName)
     }
 
-    private val visionApiService: VisionApiService by lazy {
-        VisionApiService.create()
+    private val visionRepository: VisionRepository by lazy {
+        VisionRepository(VisionApiService.create(), BuildConfig.VISION_API_KEY)
     }
 
-    suspend fun analyzeImage(bitmap: Bitmap, apiKey: String): AnalysisResult = withContext(Dispatchers.IO) {
+    /** Downscales and JPEG-encodes [bitmap], then sends it to the Vision API. */
+    suspend fun analyzeImage(bitmap: Bitmap): AnalysisResult = withContext(Dispatchers.IO) {
+        val scaled = scaleDown(bitmap, MAX_UPLOAD_DIMENSION)
         val outputStream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
-        val imageBytes = outputStream.toByteArray()
-        val base64String = Base64.encodeToString(imageBytes, Base64.NO_WRAP)
+        scaled.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
+        val base64String = Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP)
+        visionRepository.analyze(base64String)
+    }
 
-        val request = AnnotateRequest.forImage(base64String)
-        val response = visionApiService.annotateImage(apiKey, request)
-        response.toAnalysisResult()
+    /** Keeps uploads small; boxes come back normalized, so scaling doesn't affect them. */
+    private fun scaleDown(bitmap: Bitmap, maxDimension: Int): Bitmap {
+        val largest = maxOf(bitmap.width, bitmap.height)
+        if (largest <= maxDimension) return bitmap
+        val ratio = maxDimension.toFloat() / largest
+        return Bitmap.createScaledBitmap(
+            bitmap,
+            (bitmap.width * ratio).toInt().coerceAtLeast(1),
+            (bitmap.height * ratio).toInt().coerceAtLeast(1),
+            true
+        )
     }
 
     companion object {
+        private const val MAX_UPLOAD_DIMENSION = 1600
+
         @Volatile
         private var INSTANCE: DrawingRepository? = null
 

@@ -9,15 +9,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
@@ -39,9 +38,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.cs4530.drawingapp.model.AnalysisResult
 import com.cs4530.drawingapp.model.DrawingUiState
 import com.cs4530.drawingapp.model.PenShape
 
@@ -64,7 +65,10 @@ fun CanvasScreen(
     onShare: () -> Unit,
     onImportImage: (Uri) -> Unit,
     onAnalyze: () -> Unit,
-    onDismissAnalysis: () -> Unit,
+    onViewAnalysis: () -> Unit,
+    onClearAnalysis: () -> Unit,
+    onDismissAnalysisError: () -> Unit,
+    onCanvasSizeChanged: (IntSize) -> Unit,
     onBack: () -> Unit
 ) {
     val galleryLauncher = rememberLauncherForActivityResult(
@@ -93,7 +97,7 @@ fun CanvasScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onAnalyze) {
+                    IconButton(onClick = onAnalyze, enabled = !state.isAnalyzing) {
                         Icon(
                             Icons.Default.Analytics,
                             contentDescription = "Analyze with AI Vision",
@@ -143,8 +147,16 @@ fun CanvasScreen(
                 modifier = Modifier.weight(1f),
                 onStrokeStart = onStrokeStart,
                 onStrokeMove = onStrokeMove,
-                onStrokeEnd = onStrokeEnd
+                onStrokeEnd = onStrokeEnd,
+                onSizeChanged = onCanvasSizeChanged
             )
+            state.analysisResult?.let { result ->
+                AnalysisSummaryBar(
+                    result = result,
+                    onView = onViewAnalysis,
+                    onHide = onClearAnalysis
+                )
+            }
             PenControls(
                 pen = state.pen,
                 onColorChange = onColorChange,
@@ -182,49 +194,56 @@ fun CanvasScreen(
 
     if (state.analysisError != null) {
         AlertDialog(
-            onDismissRequest = onDismissAnalysis,
+            onDismissRequest = onDismissAnalysisError,
             title = { Text("Analysis Error") },
             text = { Text(state.analysisError) },
             confirmButton = {
-                TextButton(onClick = onDismissAnalysis) {
-                    Text("OK")
-                }
-            }
-        )
-    }
-
-    if (state.analysisResult != null) {
-        AlertDialog(
-            onDismissRequest = onDismissAnalysis,
-            title = { Text("AI Vision Analysis Results") },
-            text = {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    if (state.analysisResult.detectedText != null) {
-                        Text("Detected Text: ${state.analysisResult.detectedText}", fontWeight = FontWeight.Bold)
-                    }
-                    if (state.analysisResult.objects.isEmpty()) {
-                        Text("No objects detected.")
-                    } else {
-                        Text("Detected Objects (${state.analysisResult.objects.size}):", fontWeight = FontWeight.Bold)
-                        LazyColumn(
-                            modifier = Modifier.height(200.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            items(state.analysisResult.objects.size) { index ->
-                                val obj = state.analysisResult.objects[index]
-                                Text("• ${obj.name} (${(obj.confidence * 100).toInt()}% confidence)")
-                            }
-                        }
-                    }
+                TextButton(onClick = {
+                    onDismissAnalysisError()
+                    onAnalyze()
+                }) {
+                    Text("Retry")
                 }
             },
-            confirmButton = {
-                TextButton(onClick = onDismissAnalysis) {
+            dismissButton = {
+                TextButton(onClick = onDismissAnalysisError) {
                     Text("Close")
                 }
             }
         )
+    }
+}
+
+/** Shown under the canvas while boxes are on screen: a short summary plus details/hide actions. */
+@Composable
+private fun AnalysisSummaryBar(
+    result: AnalysisResult,
+    onView: () -> Unit,
+    onHide: () -> Unit
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = when {
+                    result.objects.isEmpty() -> "No objects detected"
+                    else -> result.objects.take(3).joinToString { "${it.name} ${confidenceLabel(it.confidence)}" } +
+                        if (result.objects.size > 3) " +${result.objects.size - 3}" else ""
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
+            TextButton(onClick = onView) { Text("Details") }
+            IconButton(onClick = onHide) {
+                Icon(Icons.Default.Close, contentDescription = "Hide analysis results")
+            }
+        }
     }
 }

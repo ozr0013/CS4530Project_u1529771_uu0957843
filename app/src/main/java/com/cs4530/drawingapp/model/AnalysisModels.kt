@@ -28,3 +28,9 @@ data class AnalysisResult(
 
 /** The API answered, but reported an error for the request (bad key, bad image, ect.) */
 class VisionApiException(message: String) : Exception(message)
+
+/** No Vision API key was configured at build time. */
+class MissingApiKeyException : Exception(
+    /**"/////////////////////////////////////////"*/
+    "No Vision API key is configured. Add VISION_API_KEY=your_key to local.properties and rebuild."
+)

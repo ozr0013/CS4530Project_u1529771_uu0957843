@@ -88,12 +88,28 @@ fun AppNavigation(viewModel: DrawingViewModel) {
                 onAnalyze = {
                     viewModel.analyzeCurrentDrawing()
                 },
-                onDismissAnalysis = {
-                    viewModel.dismissAnalysis()
+                onViewAnalysis = {
+                    navController.navigate("analysis")
+                },
+                onClearAnalysis = viewModel::clearAnalysis,
+                onDismissAnalysisError = viewModel::dismissAnalysisError,
+                onCanvasSizeChanged = { size ->
+                    viewModel.setCanvasSize(size.width, size.height)
                 },
                 onBack = {
                     navController.popBackStack()
                 }
+            )
+        }
+
+        composable("analysis") {
+            AnalysisScreen(
+                state = state,
+                onRetry = {
+                    viewModel.dismissAnalysisError()
+                    viewModel.analyzeCurrentDrawing()
+                },
+                onBack = { navController.popBackStack() }
             )
         }
     }

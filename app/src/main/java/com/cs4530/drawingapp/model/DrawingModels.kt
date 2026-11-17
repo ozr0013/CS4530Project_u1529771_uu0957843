@@ -30,6 +30,7 @@ data class DrawingUiState(
     val redoStack: List<PenStroke> = emptyList(),
     val backgroundImage: Bitmap? = null,
     val isAnalyzing: Boolean = false,
+    val analyzedImage: Bitmap? = null,
     val analysisResult: AnalysisResult? = null,
     val analysisError: String? = null
 ) {

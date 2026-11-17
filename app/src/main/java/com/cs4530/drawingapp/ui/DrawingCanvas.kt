@@ -1,6 +1,5 @@
 package com.cs4530.drawingapp.ui
 
-import android.graphics.Paint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -13,6 +12,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -21,7 +21,6 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import com.cs4530.drawingapp.model.DrawingUiState
@@ -40,7 +39,8 @@ fun DrawingCanvas(
     modifier: Modifier = Modifier,
     onStrokeStart: (Offset) -> Unit = {},
     onStrokeMove: (Offset) -> Unit = {},
-    onStrokeEnd: () -> Unit = {}
+    onStrokeEnd: () -> Unit = {},
+    onSizeChanged: (IntSize) -> Unit = {}
 ) {
     val currentStart by rememberUpdatedState(onStrokeStart)
     val currentMove by rememberUpdatedState(onStrokeMove)
@@ -50,6 +50,7 @@ fun DrawingCanvas(
         modifier = modifier
             .fillMaxSize()
             .background(Color.White)
+            .onSizeChanged(onSizeChanged)
             .pointerInput(Unit) {
                 awaitEachGesture {
                     // Handled manually (not detectDragGestures) so a tap with no movement
@@ -74,33 +75,7 @@ fun DrawingCanvas(
         state.strokes.forEach { drawPenStroke(it) }
         state.currentStroke?.let { drawPenStroke(it) }
 
-        state.analysisResult?.objects?.forEach { obj ->
-            val rect = obj.box
-            val left = rect.left * size.width
-            val top = rect.top * size.height
-            val right = rect.right * size.width
-            val bottom = rect.bottom * size.height
-
-            drawRect(
-                color = Color.Red,
-                topLeft = Offset(left, top),
-                size = Size(right - left, bottom - top),
-                style = Stroke(width = 4f)
-            )
-
-            val paint = Paint().apply {
-                color = android.graphics.Color.RED
-                textSize = 36f
-                isAntiAlias = true
-            }
-            val textLabel = "${obj.name} (${(obj.confidence * 100).toInt()}%)"
-            drawContext.canvas.nativeCanvas.drawText(
-                textLabel,
-                left,
-                maxOf(36f, top - 10f),
-                paint
-            )
-        }
+        state.analysisResult?.let { drawDetections(it.objects) }
     }
 }
 

@@ -15,14 +15,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.cs4530.drawingapp.BuildConfig
 import com.cs4530.drawingapp.data.local.DrawingEntity
 import com.cs4530.drawingapp.data.local.StrokeConverter
 import com.cs4530.drawingapp.data.repository.DrawingRepository
+import com.cs4530.drawingapp.model.AnalysisResult
 import com.cs4530.drawingapp.model.DrawingUiState
+import com.cs4530.drawingapp.model.MissingApiKeyException
 import com.cs4530.drawingapp.model.PenSettings
 import com.cs4530.drawingapp.model.PenShape
 import com.cs4530.drawingapp.model.PenStroke
+import com.cs4530.drawingapp.model.VisionApiException
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -30,6 +33,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.IOException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
 class DrawingViewModel(application: Application = Application()) : AndroidViewModel(application) {
 
@@ -71,6 +77,7 @@ class DrawingViewModel(application: Application = Application()) : AndroidViewMo
                 val loadedStrokes = StrokeConverter.fromJson(entity.strokesJson)
                 _state.update {
                     it.copy(strokes = loadedStrokes, currentStroke = null, redoStack = emptyList())
+                        .withoutAnalysis()
                 }
             } else {
                 newDrawing()
@@ -83,6 +90,7 @@ class DrawingViewModel(application: Application = Application()) : AndroidViewMo
         _currentTitle.value = "Untitled Drawing"
         _state.update {
             it.copy(strokes = emptyList(), currentStroke = null, redoStack = emptyList())
+                .withoutAnalysis()
         }
     }
 
@@ -146,6 +154,7 @@ class DrawingViewModel(application: Application = Application()) : AndroidViewMo
 
     fun clear() = _state.update {
         it.copy(strokes = emptyList(), currentStroke = null, redoStack = emptyList(), backgroundImage = null)
+            .withoutAnalysis()
     }
 
     fun importImageFromUri(context: Context, uri: Uri) {
@@ -155,10 +164,13 @@ class DrawingViewModel(application: Application = Application()) : AndroidViewMo
                 val bitmap = BitmapFactory.decodeStream(inputStream)
                 inputStream?.close()
                 if (bitmap != null) {
-                    _state.update { it.copy(backgroundImage = bitmap) }
+                    _state.update { it.copy(backgroundImage = bitmap).withoutAnalysis() }
+                    runAnalysis(bitmap) { repository.analyzeImage(bitmap) }
+                } else {
+                    _state.update { it.copy(analysisError = "Could not read the selected image.") }
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                _state.update { it.copy(analysisError = "Could not import the image: ${e.localizedMessage}") }
             }
         }
     }
@@ -202,28 +214,58 @@ class DrawingViewModel(application: Application = Application()) : AndroidViewMo
         }
     }
 
-    fun dismissAnalysis() {
-        _state.update { it.copy(analysisResult = null, analysisError = null) }
+
+    fun dismissAnalysisError() {
+        _state.update { it.copy(analysisError = null) }
     }
 
-    fun analyzeCurrentDrawing(apiKey: String = com.cs4530.drawingapp.BuildConfig.VISION_API_KEY) {
-        val currentState = _state.value
-        val bitmapToAnalyze = currentState.backgroundImage ?: generateDrawingBitmap()
 
-        _state.update { it.copy(isAnalyzing = true, analysisError = null, analysisResult = null) }
+    fun clearAnalysis() {
+        _state.update { it.withoutAnalysis() }
+    }
 
+    /** The canvas reports its size so the analyzed image matches what's on screen. */
+    fun setCanvasSize(width: Int, height: Int) {
+        canvasWidth = width
+        canvasHeight = height
+    }
+
+    /** Analyzes exactly what's on the canvas: the background image plus all strokes. */
+    fun analyzeCurrentDrawing() {
+        if (_state.value.isAnalyzing) return
+        val bitmap = try {
+            generateDrawingBitmap(
+                canvasWidth.takeIf { it > 0 } ?: 1024,
+                canvasHeight.takeIf { it > 0 } ?: 1024
+            )
+        } catch (e: Exception) {
+            _state.update { it.copy(analysisError = "Could not capture the drawing.") }
+            return
+        }
+        runAnalysis(bitmap) { repository.analyzeImage(bitmap) }
+    }
+
+
+    internal fun runAnalysis(image: Bitmap?, analyze: suspend () -> AnalysisResult) {
+        _state.update {
+            it.copy(isAnalyzing = true, analysisError = null, analysisResult = null, analyzedImage = image)
+        }
         viewModelScope.launch {
             try {
-                val key = apiKey.ifBlank { "AIzaSyDummyKeyForTestingOrFallback" }
-                val result = repository.analyzeImage(bitmapToAnalyze, key)
+                val result = analyze()
                 _state.update { it.copy(isAnalyzing = false, analysisResult = result) }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                _state.update { it.copy(isAnalyzing = false, analysisError = e.localizedMessage ?: "Failed to analyze image") }
+                _state.update { it.copy(isAnalyzing = false, analysisError = analysisErrorMessage(e)) }
             }
         }
     }
 
-    private fun generateDrawingBitmap(width: Int = 1024, height: Int = 1024): Bitmap {
+    private var canvasWidth = 0
+    private var canvasHeight = 0
+
+    private fun generateDrawingBitmap(width: Int, height: Int): Bitmap {
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         canvas.drawColor(android.graphics.Color.WHITE)
@@ -264,4 +306,20 @@ class DrawingViewModel(application: Application = Application()) : AndroidViewMo
         }
         return bitmap
     }
+}
+
+private fun DrawingUiState.withoutAnalysis() = copy(
+    isAnalyzing = false,
+    analyzedImage = null,
+    analysisResult = null,
+    analysisError = null
+)
+
+/** Turns any analysis failure into a message that makes sense to the user. */
+internal fun analysisErrorMessage(e: Throwable): String = when (e) {
+    is MissingApiKeyException, is VisionApiException -> e.message ?: "The Vision API reported an error."
+    is UnknownHostException -> "No internet connection. Check your network and try again."
+    is SocketTimeoutException -> "The Vision API took too long to respond. Try again."
+    is IOException -> "Network error: ${e.localizedMessage ?: "could not reach the Vision API"}"
+    else -> "Failed to analyze image: ${e.localizedMessage ?: e.javaClass.simpleName}"
 }

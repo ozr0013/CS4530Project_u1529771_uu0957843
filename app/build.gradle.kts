@@ -1,3 +1,15 @@
+import java.util.Properties
+
+// The Vision API key is read from local.properties (git-ignored) or a Gradle property
+// (e.g. ~/.gradle/gradle.properties), so it is never committed to the repository.
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+val visionApiKey: String = localProperties.getProperty("VISION_API_KEY")
+    ?: (project.findProperty("VISION_API_KEY") as String?)
+    ?: ""
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -18,7 +30,7 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String", "VISION_API_KEY", "\"${project.findProperty("VISION_API_KEY") ?: ""}\"")
+        buildConfigField("String", "VISION_API_KEY", "\"$visionApiKey\"")
     }
 
     buildTypes {
@@ -51,6 +63,8 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     testImplementation(libs.junit)
+    testImplementation(libs.okhttp.mockwebserver)
+    testImplementation(libs.kotlinx.coroutines.test)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
